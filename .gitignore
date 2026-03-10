@@ -1,0 +1,27 @@
+# Object files
+*.o
+
+# Libraries
+*.a
+
+# Executables
+a.out
+
+# Object / binary directories
+obj/
+bin/
+build/
+
+# Debug / system files
+*.log
+*.gch
+*.dSYM/
+vgcore.*
+
+# macOS / system junk
+.DS_Store
+*.swp
+*.tmp
+
+#vsCode setings
+.vscode/

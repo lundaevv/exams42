@@ -13,7 +13,6 @@ int picoshell(char **cmds[])
 
     if (cmds == NULL || cmds[0] == NULL)	// validation of parameters
         return (1);
-
     while (cmds[i] != NULL)
     {
         if (cmds[i + 1] != NULL)	// if there is a next command, we need a pipe
@@ -47,7 +46,6 @@ int picoshell(char **cmds[])
                     exit(1);
             }
             if (cmds[i + 1] != NULL)	// connect stdout to current pipe if there is a next command
-
             {
                 if (dup2(pipefd[1], STDOUT_FILENO) == -1)
                     exit(1);
@@ -59,7 +57,6 @@ int picoshell(char **cmds[])
                 close(pipefd[0]);
                 close(pipefd[1]);
             }
-
             execvp(cmds[i][0], cmds[i]);
             exit(1); // if execvp failed
         }

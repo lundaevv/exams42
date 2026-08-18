@@ -1,4 +1,6 @@
 #include "bigint.hpp"
+#include <cstddef>
+#include <sstream>
 
 bigint::bigint()
 {
@@ -54,7 +56,7 @@ std::string addition(const bigint& obj1, const bigint& obj2)
             diff--;
         }
     }
-    else if (len2 > len1)
+    if (len2 > len1)
     {
         int diff = len2 - len1;
         while (diff > 0)
@@ -63,11 +65,10 @@ std::string addition(const bigint& obj1, const bigint& obj2)
             diff--;
         }
     }
-    int carry = 0;
     int digit1;
     int digit2;
+    int carry = 0;
     size_t len = str1.length();
-
     for (size_t i = 0; i < len; i++)
     {
         digit1 = str1[i] - '0';
@@ -78,8 +79,9 @@ std::string addition(const bigint& obj1, const bigint& obj2)
             carry = res / 10;
             result.push_back(res % 10 + '0');
         }
-        else
+        else {
             result.push_back(res + '0');
+        }
     }
     if (carry != 0)
         result.push_back(carry + '0');
@@ -124,9 +126,8 @@ bigint bigint::operator>>(unsigned int n) const
     bigint temp = *this;
     if (temp.str.length() <= n)
         temp.str = "0";
-    else
-        temp.str.erase(temp.str.length() - n, n);
-    return temp;    
+    temp.str.erase(temp.str.length() - n, n);
+    return temp;
 }
 
 bigint& bigint::operator<<=(unsigned int n)
@@ -206,4 +207,3 @@ std::ostream& operator<<(std::ostream& output, const bigint& obj)
     output << obj.getStr();
     return output;
 }
-

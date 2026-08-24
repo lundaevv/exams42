@@ -23,6 +23,6 @@ void fill_board(t_game *game);
 int count_neighbors(t_game *game, int i, int j);
 int play(t_game *game);
 void print_board(t_game *game);
-void free_board(t_game * game);
+void free_board(t_game *game);
 
 #endif

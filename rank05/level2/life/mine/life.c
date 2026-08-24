@@ -18,7 +18,7 @@ int init_game(t_game *game, char *argv[])
     for (int i = 0; i < game->height; i++)
     {
         game->board[i] = (char *)malloc(game->width * sizeof(char));
-        if (!game->board)
+        if (!game->board[i])
         {
             free_board(game);
             return -1;
@@ -68,16 +68,16 @@ void fill_board(t_game *game)
 
 int count_neighbors(t_game *game, int i, int j)
 {
-    int count;
+    int count = 0;
     for (int di = -1; di < 2; di++)
     {
         for (int dj = -1; dj < 2; dj++)
         {
             if (di == 0 && dj == 0)
                 continue;
-            int ni = i + di;
-            int nj = j + dj;
-            if (ni >= 0 && ni < game->height && dj >= 0 && dj < game->width)
+            int ni = di + i;
+            int nj = dj + j;
+            if (ni >= 0 && nj >= 0 && ni < game->height && nj <= game->width)
                 if (game->board[ni][nj] == game->alive)
                     count++;
         }

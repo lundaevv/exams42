@@ -77,7 +77,7 @@ int count_neighbors(t_game *game, int i, int j)
                 continue;
             int ni = di + i;
             int nj = dj + j;
-            if (ni >= 0 && nj >= 0 && ni < game->height && nj <= game->width)
+            if (ni >= 0 && nj >= 0 && ni < game->height && nj < game->width)
                 if (game->board[ni][nj] == game->alive)
                     count++;
         }

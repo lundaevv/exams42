@@ -1,263 +1,143 @@
-
 #include "bsq.h"
 
-int loadElements(FILE* file, t_elements* elements)
+int min3(int a, int b, int c)
 {
-	int ret = fscanf(file, "%d %c %c %c", &(elements->n_lines), &(elements->empty), &(elements->obstacle), &(elements->full));
-
-	if((ret != 4))
-		return(-1);
-
-	if(elements->n_lines <= 0)
-		return(-1);
-	if(elements->empty == elements->obstacle || elements->empty == elements->full || elements->obstacle == elements->full)
-		return(-1);
-	if(elements->empty < 32 || elements->empty > 126)
-		return(-1);
-	if(elements->obstacle < 32 || elements->obstacle > 126)
-		return(-1);
-	if(elements->full < 32 || elements->full > 126)
-		return(-1);
-
-	return(0);
+    if (a <= b && a <= c)
+        return a;
+    if (b <= c)
+        return b;
+    return c;
 }
 
-char* ft_substr(char* arr, int start, int len)
+void free_map(t_map *map)
 {
-	char* str = (char*)malloc(len + 1);
-	if (!str)
-		return (NULL);
-	int i = 0;
-	int j = 0;
-	while (arr[i])
-	{
-		if ((i >= start) && (j < len))
-		{
-			str[j] = arr[i];
-			j++;
-		}
-		i++;
-	}
-	str[j] = '\0';
-	return(str);
+    if (map->grid)
+    {
+        for (int i = 0; i < map->height; i++)
+            if (map->grid[i])
+                free(map->grid[i]);
+        free(map->grid);
+        map->grid = NULL;
+    }
 }
 
-void free_map(char** arr)
+int fail_read(char *line, t_map *map)
 {
-	int	i = 0;
-	if(arr)
-	{
-		while (arr[i] != NULL)
-		{
-			if(arr[i])
-				free(arr[i]);
-			i++;
-		}
-		free(arr);
-	}
+    free(line);
+    free_map(map);
+    return -1;
 }
 
-void print(char** arr)
+int read_map(FILE *f, t_map *map)
 {
-	int i = 0;
-	while(arr[i])
-	{
-		printf("%s\n", arr[i]);
-		i++;
-	}
-	printf("\n");
+    char *line = NULL;
+    size_t cap = 0;
+    ssize_t n;
+    map->grid = NULL;
+    if (fscanf(f, "%d %c %c %c", &map->height, &map->empty, &map->obstacle, &map->full) != 4)
+        return -1;
+    if (map->height <= 0 || map->empty == map->obstacle || map->empty == map->full || map->obstacle == map->full)
+        return -1;
+    if (map->empty < ' ' || map->empty > '~' || map->obstacle < ' ' || map->obstacle > '~' || map->full < ' ' || map->full > '~')
+        return -1;
+    fscanf(f, "%*[^\n]");
+    fscanf(f, "%*c");
+    map->grid = (char **)calloc(map->height, sizeof(char *));
+    if (!map->grid)
+        return -1;
+    for (int i = 0; i < map->height; i++)
+    {
+        n = getline(&line, &cap, f);
+        if (n < 2 || line[n - 1] != '\n')
+            return fail_read(line, map);
+        if (i == 0)
+            map->width = n - 1;
+        if (map->width < 1 || n - 1 != map->width)
+            return fail_read(line, map);
+        map->grid[i] = (char *)malloc(map->width + 1);
+        if (!map->grid[i])
+            return fail_read(line, map);
+        for (int j = 0; j < map->width; j++)
+        {
+            if (line[j] != map->empty && line[j] != map->obstacle)
+                return fail_read(line, map);
+            map->grid[i][j] = line[j];
+        }
+        map->grid[i][map->width] = '\0';
+    }
+    free(line);
+    return 0;
 }
 
-int element_control(char** map, char c1, char c2)
+void solve(t_map *map)
 {
-	int i = 0;
-	while(map[i])
-	{
-		int j = 0;
-		while(map[i][j] != '\0')
-		{
-			if((map[i][j] != c1) && (map[i][j] != c2))
-				return(-1);
-			j++;
-		}
-		i++;
-	}
-	return(0);
+    int best = 0;
+    int bx = 0;
+    int by = 0;
+    int *dp = (int *)calloc(map->width * map->height, sizeof(int));
+    if (!dp)
+        return;
+    for (int y = 0; y < map->height; y++)
+        for (int x = 0; x < map->width; x++)
+        {
+            if (map->grid[y][x] != map->empty)
+                continue;
+            if (x == 0 || y == 0)
+                dp[y * map->width + x] = 1;
+            else
+                dp[y * map->width + x] = 1 + min3(dp[(y - 1) * map->width + x],
+                    dp[y * map->width + x - 1], dp[(y - 1) * map->width + x - 1]);
+            if (dp[y * map->width + x] > best)
+            {
+                best = dp[y * map->width + x];
+                bx = x;
+                by = y;
+            }
+        }
+    for (int y = by - best + 1; y <= by; y++)
+        for (int x = bx - best + 1; x <= bx; x++)
+            map->grid[y][x] = map->full;
+    free(dp);
 }
 
-int loadMap(FILE* file, t_map* map, t_elements* elements)
+void print_map(t_map *map)
 {
-	map->height = elements->n_lines;
-	map->grid = (char**)malloc((map->height + 1) * (sizeof(char *)));
-	map->grid[map->height] = NULL;
-
-	char* line = NULL;
-	size_t len = 0;
-
-	if(getline(&line, &len, file) == -1) {
-		free_map(map->grid);
-		return(-1);
-	}
-
-	//int i = 0;
-	//while(i < elements->n_lines)
-	for(int i = 0; i < map->height; i++)
-	{
-		int read = getline(&line, &len, file);
-		if(read == -1) {
-			free(line);
-			free_map(map->grid);
-			return(-1);
-		}
-		if(line[read - 1] == '\n')
-			read--;
-		else{
-			free(line);
-			free_map(map->grid);
-			return(-1);
-		}
-		map->grid[i] = ft_substr(line, 0, read);
-		if(!(map->grid[i]))
-		{
-			free(line);
-			free_map(map->grid);
-			return(-1);
-		}
-
-		if(i == 0)
-			map->width = read;
-		else{
-			if(map->width != read){
-				free(line);
-				free_map(map->grid);
-				return(-1);
-			}
-		}
-		//i++;
-	}
-
-	/*
-	ssize_t extra = getline(&line, &len, file);
-	if(extra != -1) {  // Fazladan satır var!
-		free(line);
-		free_map(map->grid);
-		return(-1);
-	}
-	// gerek var mı bilmiyorum??
-	*/
-
-	if(element_control(map->grid, elements->empty, elements->obstacle) == -1) {
-		free(line);
-		free_map(map->grid);
-		return(-1);
-	}
-
-	free(line);
-
-	return (0);
+    for (int i = 0; i < map->height; i++)
+        fprintf(stdout, "%s\n", map->grid[i]);
 }
 
-int find_min(int n1, int n2, int n3)
+int process_map(FILE *f)
 {
-	int min = n1;
-
-	if(n2 < min)
-		min = n2;
-	if(n3 < min)
-		min = n3;
-	return(min);
+    t_map map;
+    if (read_map(f, &map) == -1)
+        return -1;
+    solve(&map);
+    print_map(&map);
+    free_map(&map);
+    return 0;
 }
 
-void find_big_square(t_map* map, t_square* square, t_elements* elements)
+int main(int argc, char *argv[])
 {
-	// matrix init
-	int matrix[map->height][map->width];
-	for(int i = 0; i < map->height; i++)
-	{
-		for(int j = 0; j < map->width; j++)
-			matrix[i][j] = 0;
-	}
-
-	for(int i = 0; i < map->height; i++)
-	{
-		for(int j = 0; j < map->width; j++)
-		{
-			if(map->grid[i][j] == elements->obstacle)
-				matrix[i][j] = 0;
-			else if(i == 0 || j == 0)
-				matrix[i][j] = 1;
-			else {
-				int min = find_min(matrix[i - 1][j],matrix[i - 1][j - 1], matrix[i][j - 1]);
-				matrix[i][j] = min + 1;
-			}
-
-			if(matrix[i][j] > square->size)
-			{
-				square->size = matrix[i][j];
-				square->i = i - matrix[i][j] + 1;
-				square->j = j - matrix[i][j] + 1;
-			}
-		}
-	}
-	/** matrix print
-	for(int i = 0; i < map->height; i++)
-	{
-		for(int j = 0; j < map->width; j++)
-		{
-			printf("%d", matrix[i][j]);
-		}
-		printf("\n");
-	}
-	*/
-
-}
-
-void print_filled_square(t_map* map, t_square* square, t_elements* elements)
-{
-
-	for(int i = square->i; i < square->i + square->size; i++)
-	{
-		for(int j = square->j; j < square->j + square->size; j++)
-		{
-			if((i < map->height) && (j < map->width))
-				map->grid[i][j] = elements->full;
-		}
-	}
-
-	for(int i = 0; i < map->height; i++)
-	{
-		fprintf(stdout, "%s\n", map->grid[i]);
-	}
-}
-
-int execute_bsq(FILE* file)
-{
-	t_elements elements;
-	if(loadElements(file, &elements) == -1)
-		return(-1);
-
-	t_map map;
-	if(loadMap(file, &map, &elements) == -1)
-		return(-1);
-
-	//print(map.grid);
-
-	t_square square;
-	square.size = 0; square.i = 0; square.j = 0;
-	find_big_square(&map, &square, &elements);
-	// printf("size: %d, i: %d, j: %d", square.size, square.i, square.j);
-	print_filled_square(&map, &square, &elements);
-	free_map(map.grid);
-	return(0);
-}
-
-int convert_file_pointer(char* name)
-{
-	FILE* file = fopen(name, "r");
-	if(!file)
-		return(-1);
-	int ret = 0;
-	ret = execute_bsq(file);
-	fclose(file);
-	return(ret);
+    if (argc == 1)
+    {
+        if (process_map(stdin) == -1)
+            fprintf(stderr, "map error\n");
+        return 0;
+    }
+    for (int i = 1; i < argc; i++)
+    {
+        FILE *f = fopen(argv[i], "r");
+        if (!f)
+            fprintf(stderr, "map error\n");
+        else
+        {
+            if (process_map(f) == -1)
+                fprintf(stderr, "map error\n");
+            fclose(f);
+        }
+        if (i < argc - 1)
+            fprintf(stdout, "\n");
+    }
+    return 0;
 }

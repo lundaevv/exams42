@@ -32,9 +32,9 @@ int init_game(t_game *game, char *argv[])
 void fill_board(t_game *game)
 {
     char buffer;
-    int flag = 0;
     while (read(STDIN_FILENO, &buffer, 1) == 1)
     {
+        int flag = 0;
         switch (buffer)
         {
             case 'w':
@@ -61,7 +61,7 @@ void fill_board(t_game *game)
                 break;
         }
         if (game->draw && flag == 0)
-            if (game->i >= 0 && game->i < game->height && game->j >= 0 && game->j < game->width)
+            if (game->i >= 0 && game->j >= 0 && game->i < game->height && game->j < game->width)
                 game->board[game->i][game->j] = game->alive;
     }
 }
@@ -75,8 +75,8 @@ int count_neighbors(t_game *game, int i, int j)
         {
             if (di == 0 && dj == 0)
                 continue;
-            int ni = di + i;
-            int nj = dj + j;
+            int ni = i + di;
+            int nj = j + dj;
             if (ni >= 0 && nj >= 0 && ni < game->height && nj < game->width)
                 if (game->board[ni][nj] == game->alive)
                     count++;
@@ -87,7 +87,7 @@ int count_neighbors(t_game *game, int i, int j)
 
 int play(t_game *game)
 {
-    char **temp = (char **)malloc(game->height * sizeof(char *));
+    char **temp = (char **)calloc(game->height, sizeof(char *));
     if (!temp)
         return -1;
     for (int i = 0; i < game->height; i++)
@@ -105,14 +105,14 @@ int play(t_game *game)
     {
         for (int j = 0; j < game->width; j++)
         {
-            int neighbors = count_neighbors(game, i, j);
+            int count = count_neighbors(game, i, j);
             if (game->board[i][j] == game->alive)
-                if (neighbors == 2 || neighbors == 3)
+                if (count == 2 || count == 3)
                     temp[i][j] = game->alive;
                 else
                     temp[i][j] = game->dead;
             else
-                if (neighbors == 3)
+                if (count == 3)
                     temp[i][j] = game->alive;
                 else
                     temp[i][j] = game->dead;

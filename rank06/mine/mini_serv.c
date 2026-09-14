@@ -90,3 +90,27 @@ void remove_client(int fd)
 	FD_CLR(fd, &afds);
 	close(fd);
 }
+
+void send_msg(int fd)
+{
+	char *msg;
+	int ret;
+	while ((ret = extract_message(&(msgs[fd]), &msg)) == 1)
+	{
+		sprintf(buf_write, "client %d: ", ids[fd]);
+		notify_other(fd, buf_write);
+		notify_other(fd, msg);
+		free(msg);
+	}
+	if (ret == -1)
+		fatal_error();
+}
+
+int create_socket()
+{
+	max_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (max_fd < 0)
+		fatal_error();
+	FD_SET(max_fd, &afds);
+	return max_fd;
+}

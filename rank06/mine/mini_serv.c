@@ -59,15 +59,34 @@ char *str_join(char *buf, char *add)
 
 void fatal_error()
 {
-    write(2, "Fatal error\n", 12);
-    exit(1);
+	write(2, "Fatal error\n", 12);
+	exit(1);
 }
 
 void notify_other(int author, char *str)
 {
-    for (int fd = 0; fd <= max_fd; fd++)
-    {
-        if (FD_ISSET(fd, &wfds) && fd != author)
-            send(fd, str, strlen(str), 0);
-    }
+	for (int fd = 0; fd <= max_fd; fd++)
+	{
+		if (FD_ISSET(fd, &wfds) && fd != author)
+			send(fd, str, strlen(str), 0);
+	}
+}
+
+void register_client(int fd)
+{
+	max_fd = fd > max_fd ? fd : max_fd;
+	ids[fd] = count++;
+	msgs[fd] = NULL;
+	FD_SET(fd, &afds);
+	sprintf(buf_write, "server: client %d just arrived\n", ids[fd]);
+	notify_other(fd, buf_write);
+}
+
+void remove_client(int fd)
+{
+	sprintf(buf_write, "server: client %d just left\n", ids[fd]);
+	notify_other(fd, buf_write);
+	free(msgs[fd]);
+	FD_CLR(fd, &afds);
+	close(fd);
 }

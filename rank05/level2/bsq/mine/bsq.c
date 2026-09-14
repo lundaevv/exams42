@@ -74,7 +74,7 @@ void solve(t_map *map)
     int best = 0;
     int bx = 0;
     int by = 0;
-    int *dp = (int *)calloc(map->height * map->width, sizeof(int));
+    int *dp = (int *)calloc(map->width * map->height, sizeof(int));
     if (!dp)
         return;
     for (int y = 0; y < map->height; y++)

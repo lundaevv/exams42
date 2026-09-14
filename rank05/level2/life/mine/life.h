@@ -1,14 +1,14 @@
 #ifndef LIFE_H
 #define LIFE_H
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 typedef struct s_game
 {
-    int height;
     int width;
+    int height;
     int iterations;
     char alive;
     char dead;

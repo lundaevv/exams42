@@ -115,9 +115,9 @@ int create_socket()
 	return max_fd;
 }
 
-int main(int ac, char **av)
+int main(int argc, char **argv)
 {
-	if (ac != 2)
+	if (argc != 2)
 	{
 		write(2, "Wrong number of arguments\n", 26);
 		exit(1);
@@ -125,12 +125,12 @@ int main(int ac, char **av)
 	FD_ZERO(&afds);
 	int sockfd = create_socket();
 
-	struct sockaddr_in servaddr; //copy
+	struct sockaddr_in servaddr; //copy and delete cli
 	bzero(&servaddr, sizeof(servaddr)); //copy
 	servaddr.sin_family = AF_INET; //copy
 	servaddr.sin_addr.s_addr = htonl(2130706433); //copy
-	servaddr.sin_port = htons(atoi(av[1])); // replace 8080
-	if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)))
+	servaddr.sin_port = htons(atoi(argv[1])); // replace 8080
+	if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr))) //delete !=0
 		fatal_error();
 	if (listen(sockfd, SOMAXCONN)) // the main uses 10, SOMAXCONN is 180 on my machine
 		fatal_error(); //end copy

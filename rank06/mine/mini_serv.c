@@ -114,3 +114,60 @@ int create_socket()
 	FD_SET(max_fd, &afds);
 	return max_fd;
 }
+
+int main(int argc, char **argv)
+{
+	if (argc != 2)
+	{
+		write(2, "Wrong number of arguments\n", 26);
+		exit(1);
+	}
+	FD_ZERO(&afds);
+	int sockfd = create_socket();
+
+	struct sockaddr_in servaddr;
+	bzero(&servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET; 
+	servaddr.sin_addr.s_addr = htonl(2130706433); //127.0.0.1
+	servaddr.sin_port = htons(atoi(argv[1]));
+	if ((bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr))))
+		fatal_error();
+	if (listen(sockfd, SOMAXCONN))
+		fatal_error();
+
+	while (1)
+	{
+		rfds = wfds = afds;
+		if (select(max_fd + 1, &rfds, &wfds, NULL, NULL) < 0)
+			fatal_error();
+		for (int fd = 0; fd <= max_fd; fd++)
+		{
+			if (!FD_ISSET(fd, &rfds))
+				continue;
+			if (fd == sockfd)
+			{
+				socklen_t addr_len = sizeof(servaddr);
+				int client_fd = accept(sockfd, (struct sockaddr *)&servaddr, &addr_len);
+				if (client_fd >= 0)
+				{
+					register_client(client_fd);
+					break;
+				}
+			}
+			else
+			{
+				int read_bytes = recv(fd, buf_read, 1000, 0);
+				if (read_bytes <= 0)
+				{
+					remove_client(fd);
+					break;
+				}
+				buf_read[read_bytes] = '\0';
+				if (!(msgs[fd] = str_join(msgs[fd], buf_read)))
+					fatal_error();
+				send_msg(fd);
+			}
+		}
+	}
+	return 0;
+}
